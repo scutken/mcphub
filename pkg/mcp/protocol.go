@@ -129,7 +129,7 @@ type ListToolsResult struct {
 // CallToolParams is the params for tools/call.
 type CallToolParams struct {
 	Name      string                 `json:"name"`
-	Arguments map[string]interface{} `json:"arguments,omitempty"`
+	Arguments map[string]interface{} `json:"arguments"`
 }
 
 // CallToolResult is the response to tools/call.

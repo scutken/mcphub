@@ -141,6 +141,9 @@
     font-size: 12px;
     color: var(--color-shuang);
     line-height: 1.6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tool-params {

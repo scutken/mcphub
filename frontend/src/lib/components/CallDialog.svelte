@@ -3,11 +3,12 @@
 
   interface Props {
     tool: string;
+    toolSchema?: { type: string; properties?: Record<string, any>; required?: string[] };
     oncancel: () => void;
     onsubmit: (args: Record<string, any>) => void;
   }
 
-  let { tool, oncancel, onsubmit }: Props = $props();
+  let { tool, toolSchema, oncancel, onsubmit }: Props = $props();
 
   let argsText = $state('{}');
   let error = $state('');
@@ -30,8 +31,8 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="overlay" onclick={oncancel} role="presentation">
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <div class="dialog" onclick={(e) => e.stopPropagation()} role="dialog" aria-label="调用工具">
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
+  <div class="dialog" onclick={(e) => e.stopPropagation()} role="dialog" aria-label="调用工具" tabindex="-1">
     <div class="dialog-header">
       <h3>调用工具</h3>
       <button class="close-btn" onclick={oncancel} type="button" aria-label="关闭">

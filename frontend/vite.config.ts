@@ -7,5 +7,8 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    fs: {
+      allow: ['..'], // 允许访问 wailsjs 目录
+    },
   },
 });

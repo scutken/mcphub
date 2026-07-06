@@ -3,6 +3,8 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
   import Titlebar from '$lib/components/Titlebar.svelte';
   import { page } from '$app/stores';
+
+  let { children } = $props();
 </script>
 
 <Titlebar />

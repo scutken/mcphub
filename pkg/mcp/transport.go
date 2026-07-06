@@ -58,9 +58,11 @@ func NewTransport(baseURL string, headers map[string]string, transportType Trans
 // ========== Streamable HTTP Transport (2025-11-25) ==========
 
 type streamableTransport struct {
-	baseURL string
-	headers map[string]string
-	client  *http.Client
+	baseURL   string
+	headers   map[string]string
+	client    *http.Client
+	sessionID string // Mcp-Session-Id from server
+	mu        sync.Mutex
 }
 
 func newStreamableTransport(baseURL string, headers map[string]string) *streamableTransport {
@@ -89,13 +91,32 @@ func (t *streamableTransport) Send(ctx context.Context, req *Request) (*Response
 		httpReq.Header.Set(k, v)
 	}
 
+	// 携带之前服务器下发的 session ID
+	t.mu.Lock()
+	if t.sessionID != "" {
+		httpReq.Header.Set("Mcp-Session-Id", t.sessionID)
+	}
+	t.mu.Unlock()
+
 	resp, err := t.client.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
+	// 捕获服务器返回的 session ID
+	if sid := resp.Header.Get("Mcp-Session-Id"); sid != "" {
+		t.mu.Lock()
+		t.sessionID = sid
+		t.mu.Unlock()
+	}
+
 	contentType := resp.Header.Get("Content-Type")
+
+	// 202 Accepted — 通知无需响应体，直接返回空响应
+	if resp.StatusCode == http.StatusAccepted {
+		return &Response{}, nil
+	}
 
 	// If the response is SSE, parse the first event
 	if strings.Contains(contentType, "text/event-stream") {
@@ -105,6 +126,10 @@ func (t *streamableTransport) Send(ctx context.Context, req *Request) (*Response
 	// Otherwise, parse as JSON-RPC response
 	var rpcResp Response
 	if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		// 空 body 对通知是正常的
+		if err == io.EOF {
+			return &Response{}, nil
+		}
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 	return &rpcResp, nil

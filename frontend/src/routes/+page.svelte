@@ -1,8 +1,23 @@
 <script lang="ts">
   import { Wrench, ArrowRight } from '@lucide/svelte';
+  import { goto } from '$app/navigation';
   import Logo from '$lib/components/Logo.svelte';
+  import AddServerDialog from '$lib/components/AddServerDialog.svelte';
+  import { ListServers } from '../../wailsjs/go/main/App';
 
-  let activeTab = $state<'tools' | 'call'>('tools');
+  let showAddDialog = $state(false);
+
+  async function browseTools() {
+    try {
+      const servers = await ListServers();
+      const first = servers.find(s => s.status === 'connected') || servers[0];
+      if (first) {
+        goto(`/servers/${encodeURIComponent(first.name)}`);
+      }
+    } catch (e) {
+      // no servers available, do nothing
+    }
+  }
 </script>
 
 <svelte:head>
@@ -17,12 +32,12 @@
   <p class="welcome-desc">管理 MCP 服务器，发现和调用工具</p>
 
   <div class="quick-actions">
-    <button class="quick-action" type="button">
+    <button class="quick-action" type="button" onclick={() => showAddDialog = true}>
       <span class="qa-icon">+</span>
       <span class="qa-label">添加服务器</span>
       <span class="qa-arrow"><ArrowRight size={14} /></span>
     </button>
-    <button class="quick-action" type="button">
+    <button class="quick-action" type="button" onclick={browseTools}>
       <Wrench size={16} />
       <span class="qa-label">浏览工具</span>
       <span class="qa-arrow"><ArrowRight size={14} /></span>
@@ -36,6 +51,13 @@
     <code>mcphub call &lt;server&gt; &lt;tool&gt;</code>
   </div>
 </div>
+
+{#if showAddDialog}
+  <AddServerDialog
+    oncancel={() => showAddDialog = false}
+    onsuccess={() => showAddDialog = false}
+  />
+{/if}
 
 <style>
   .welcome {

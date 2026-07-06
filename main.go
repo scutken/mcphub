@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/scutken/mcphub/cmd/cli"
@@ -16,7 +17,8 @@ import (
 func main() {
 	// Check mode early for console attachment on Windows
 	args := os.Args[1:]
-	isServe := len(args) > 0 && args[0] == "serve"
+	// 无参数（wails dev / 直接双击）视为 GUI 模式，显式 "serve" 也进 GUI
+	isServe := len(args) == 0 || args[0] == "serve"
 
 	// On Windows GUI subsystem, attach to parent console for CLI mode
 	if !isServe {
@@ -53,7 +55,9 @@ func main() {
 			MinWidth:  800,
 			MinHeight: 600,
 			AssetServer: &assetserver.Options{
-				Assets: nil, // Embedded by wails build
+				// 通过 Handler 校验，dev 模式下 Wails 自动替换为 Vite dev server
+				// 生产 build 时 Wails 会替换为 embedded assets
+				Handler: http.FileServer(http.Dir("frontend/dist")),
 			},
 			OnStartup:  app.startup,
 			OnShutdown: app.shutdown,

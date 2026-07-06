@@ -242,7 +242,7 @@ func newCallCmd() *cobra.Command {
 			serverName := args[0]
 			toolName := args[1]
 
-			var parsedArgs map[string]interface{}
+			parsedArgs := make(map[string]interface{})
 			if callArgs != "" {
 				if err := json.Unmarshal([]byte(callArgs), &parsedArgs); err != nil {
 					return fmt.Errorf("JSON 参数无效: %w", err)
