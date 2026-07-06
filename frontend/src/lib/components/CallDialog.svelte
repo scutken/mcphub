@@ -51,7 +51,7 @@
           bind:value={argsText}
           class="args-input"
           rows={6}
-          placeholder='{"key": "value"}'
+          placeholder={'{"key": "value"}'}
         ></textarea>
         {#if error}
           <p class="error-msg">{error}</p>
