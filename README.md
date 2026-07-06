@@ -58,14 +58,29 @@ mcphub call <server> <tool> --args '<JSON>'
 
 ## 从源码构建
 
+### 本地开发
+
 ```bash
+# 1. 安装 pnpm 和 Wails CLI
+npm install -g pnpm
+go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+# 2. 克隆项目
 git clone https://github.com/scutken/mcphub.git
-cd mcphub/frontend && npm install
-cd .. && go install github.com/wailsapp/wails/v2/cmd/wails@latest
+cd mcphub
+
+# 3. 安装前端依赖
+cd frontend
+pnpm install --ignore-scripts
+pnpm rebuild esbuild
+cd ..
+
+# 4. 启动开发模式（热重载）
+wails dev
+
+# 5. 或直接构建 .exe
 wails build -platform windows/amd64
 ```
-
-或直接推送到 GitHub，Actions 自动构建 Windows .exe。
 
 ## 项目结构
 
