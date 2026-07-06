@@ -10,9 +10,6 @@ const config = {
       assets: 'dist',
       fallback: 'index.html',
     }),
-    prerender: {
-      entries: ['*'],
-    },
   },
 };
 
