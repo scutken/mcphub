@@ -38,7 +38,9 @@
         <span class="param-count">{params.length}</span>
       {/if}
     </div>
-    <ChevronRight size={14} class="expand-icon {showParams ? 'rotated' : ''}" />
+    <span class="expand-icon" style:transform={showParams ? 'rotate(90deg)' : ''}>
+      <ChevronRight size={14} />
+    </span>
   </button>
 
   {#if tool.description}
@@ -130,10 +132,7 @@
     color: var(--color-huiye);
     transition: transform var(--transition-base);
     flex-shrink: 0;
-  }
-
-  .expand-icon :global(.rotated) {
-    transform: rotate(90deg);
+    display: flex;
   }
 
   .tool-desc {

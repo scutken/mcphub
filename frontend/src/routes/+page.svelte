@@ -19,12 +19,12 @@
     <button class="quick-action" type="button">
       <span class="qa-icon">+</span>
       <span class="qa-label">添加服务器</span>
-      <ArrowRight size={14} class="qa-arrow" />
+      <span class="qa-arrow"><ArrowRight size={14} /></span>
     </button>
     <button class="quick-action" type="button">
       <Wrench size={16} />
       <span class="qa-label">浏览工具</span>
-      <ArrowRight size={14} class="qa-arrow" />
+      <span class="qa-arrow"><ArrowRight size={14} /></span>
     </button>
   </div>
 
