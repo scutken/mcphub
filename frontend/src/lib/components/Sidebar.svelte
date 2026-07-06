@@ -2,7 +2,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import ServerCard from './ServerCard.svelte';
-  import { Layers, Plus, RefreshCw } from 'lucide-svelte';
+  import { Layers, Plus, RefreshCw } from '@lucide/svelte';
 
   // TODO: Wire up to Wails bindings via Go
   let servers = $state([

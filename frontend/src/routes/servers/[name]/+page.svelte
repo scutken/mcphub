@@ -2,7 +2,7 @@
   import { page } from '$app/stores';
   import ToolCard from '$lib/components/ToolCard.svelte';
   import CallDialog from '$lib/components/CallDialog.svelte';
-  import { Wrench } from 'lucide-svelte';
+  import { Wrench } from '@lucide/svelte';
 
   let { data } = $props();
 

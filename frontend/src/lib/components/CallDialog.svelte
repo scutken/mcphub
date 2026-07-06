@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, SendHorizontal } from 'lucide-svelte';
+  import { X, SendHorizontal } from '@lucide/svelte';
 
   interface Props {
     tool: string;

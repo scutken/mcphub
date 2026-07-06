@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronRight, Play } from 'lucide-svelte';
+  import { ChevronRight, Play } from '@lucide/svelte';
 
   interface Props {
     tool: {

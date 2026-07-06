@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Circle, ChevronRight } from 'lucide-svelte';
+  import { Circle, ChevronRight } from '@lucide/svelte';
 
   interface Props {
     server: {

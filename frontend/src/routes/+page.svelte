@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Wrench, ArrowRight, Server } from 'lucide-svelte';
+  import { Wrench, ArrowRight, Server } from '@lucide/svelte';
 
   let activeTab = $state<'tools' | 'call'>('tools');
 </script>
