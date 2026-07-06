@@ -4,6 +4,7 @@
 
 <div class="titlebar">
   <div class="titlebar-left">
+    <img src="/logo.svg" alt="MCPHub" class="titlebar-logo" />
     <span class="brand">MCP<span class="brand-accent">Hub</span></span>
   </div>
   <div class="titlebar-center">
@@ -30,6 +31,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .titlebar-logo {
+    width: 18px;
+    height: 18px;
   }
 
   .brand {

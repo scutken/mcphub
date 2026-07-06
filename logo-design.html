@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCPHub Logo 设计</title>
+<style>
+  :root {
+    --mo: #1a1a2e;
+    --xuanqing: #16213e;
+    --dailan: #0f3460;
+    --yaqing: #2a3a5c;
+    --liujin: #d4a853;
+    --supai: #e8e4db;
+    --shuang: #8b8b8b;
+    --shiqing: #4ecdc4;
+    --zhusha: #e74c3c;
+    --die: #9b59b6;
+    --huiye: #5a5a6e;
+    --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--mo);
+    color: var(--supai);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--supai);
+    letter-spacing: 0.02em;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--shuang);
+    margin-bottom: 48px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 32px;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  .card {
+    background: var(--xuanqing);
+    border: 1px solid var(--yaqing);
+    border-radius: 16px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--liujin);
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--shuang);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .logo-display {
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    background: var(--dailan);
+    position: relative;
+  }
+
+  .logo-display svg {
+    width: 100px;
+    height: 100px;
+  }
+
+  .logo-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--supai);
+    letter-spacing: 0.03em;
+  }
+
+  .logo-title .accent { color: var(--liujin); font-weight: 300; }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--shuang);
+    text-align: center;
+    line-height: 1.6;
+    max-width: 280px;
+  }
+
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--yaqing);
+    margin: 16px 0;
+  }
+
+  .tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tag {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--dailan);
+    color: var(--shuang);
+  }
+
+  .tag.pick {
+    background: color-mix(in srgb, var(--liujin) 20%, var(--dailan));
+    color: var(--liujin);
+  }
+
+  /* Tweaks panel */
+  .tweaks {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--xuanqing);
+    border: 1px solid var(--yaqing);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--shuang);
+    z-index: 10;
+  }
+
+  .tweaks button {
+    padding: 4px 12px;
+    border: 1px solid var(--yaqing);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--supai);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+
+  .tweaks button:hover { border-color: var(--liujin); }
+  .tweaks button.active { background: var(--liujin); color: var(--mo); border-color: var(--liujin); }
+</style>
+</head>
+<body>
+
+<div class="tweaks" id="tweaks">
+  <span>底色</span>
+  <button data-bg="dailan" class="active">黛蓝</button>
+  <button data-bg="mo">墨</button>
+  <button data-bg="xuanqing">玄青</button>
+</div>
+
+<h1 class="page-title">MCP<span style="color:var(--liujin);font-weight:300;">Hub</span></h1>
+<p class="page-subtitle">Logo 设计 — 三个方向</p>
+
+<div class="grid" id="grid">
+
+  <!-- 变体 1: 窗格互联 -->
+  <div class="card">
+    <div class="card-label">方向一 · 保守</div>
+    <div class="logo-display" id="bg-1">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 八边形外框 -->
+        <polygon points="50,8 76,18 92,42 92,58 76,82 50,92 24,82 8,58 8,42 24,18"
+          fill="none" stroke="#d4a853" stroke-width="2.5"/>
+        <!-- 中心节点 -->
+        <circle cx="50" cy="50" r="8" fill="#d4a853" opacity="0.9"/>
+        <!-- 四向连接线 -->
+        <line x1="50" y1="20" x2="50" y2="42" stroke="#d4a853" stroke-width="1.5" opacity="0.5"/>
+        <line x1="50" y1="58" x2="50" y2="80" stroke="#d4a853" stroke-width="1.5" opacity="0.5"/>
+        <line x1="20" y1="50" x2="42" y2="50" stroke="#d4a853" stroke-width="1.5" opacity="0.5"/>
+        <line x1="58" y1="50" x2="80" y2="50" stroke="#d4a853" stroke-width="1.5" opacity="0.5"/>
+        <!-- 四向子节点 -->
+        <circle cx="50" cy="18" r="5" fill="#d4a853" opacity="0.7"/>
+        <circle cx="50" cy="82" r="5" fill="#d4a853" opacity="0.7"/>
+        <circle cx="18" cy="50" r="5" fill="#d4a853" opacity="0.7"/>
+        <circle cx="82" cy="50" r="5" fill="#d4a853" opacity="0.7"/>
+      </svg>
+    </div>
+    <div class="logo-title">MCP<span class="accent">Hub</span></div>
+    <div class="card-desc">八边形窗格结构 + 中心枢纽四向连接，表达"汇聚与分发"。线条取自传统花窗纹样，暗合 MCP 协议的中转角色。</div>
+    <div class="tags">
+      <span class="tag pick">推荐</span>
+      <span class="tag">几何</span>
+      <span class="tag">传统纹样</span>
+      <span class="tag">Hub 概念</span>
+    </div>
+  </div>
+
+  <!-- 变体 2: 八卦/互锁 -->
+  <div class="card">
+    <div class="card-label">方向二 · 适配</div>
+    <div class="logo-display" id="bg-2">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 外圆 -->
+        <circle cx="50" cy="50" r="44" fill="none" stroke="#d4a853" stroke-width="2"/>
+        <!-- 互锁弧线 — 上下两半 -->
+        <path d="M50 6 A44 44 0 0 1 50 94" fill="none" stroke="#d4a853" stroke-width="2.5"/>
+        <path d="M50 6 A44 44 0 0 0 50 94" fill="none" stroke="#d4a853" stroke-width="2.5"/>
+        <!-- 中心圆 -->
+        <circle cx="50" cy="50" r="10" fill="#d4a853" opacity="0.85"/>
+        <!-- 四个小端点 -->
+        <circle cx="50" cy="12" r="4" fill="#d4a853"/>
+        <circle cx="50" cy="88" r="4" fill="#d4a853"/>
+        <circle cx="74" cy="32" r="3.5" fill="#d4a853" opacity="0.6"/>
+        <circle cx="26" cy="68" r="3.5" fill="#d4a853" opacity="0.6"/>
+      </svg>
+    </div>
+    <div class="logo-title">MCP<span class="accent">Hub</span></div>
+    <div class="card-desc">外圆内互锁双弧，取意太极的流动与平衡，中心点汇聚。表达 Client ↔ Server 双向通信。</div>
+    <div class="tags">
+      <span class="tag">太极</span>
+      <span class="tag">双向通信</span>
+      <span class="tag">流动感</span>
+    </div>
+  </div>
+
+  <!-- 变体 3: 汉字/印章 -->
+  <div class="card">
+    <div class="card-label">方向三 · 突破</div>
+    <div class="logo-display" id="bg-3">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 方框 — 印章意象 -->
+        <rect x="14" y="14" width="72" height="72" rx="8" fill="none" stroke="#d4a853" stroke-width="2.5"/>
+        <!-- "枢" 字的简笔 — 中心枢纽 -->
+        <g transform="translate(50,50) scale(0.6)">
+          <!-- 木字旁 -->
+          <line x1="-20" y1="-28" x2="-20" y2="28" stroke="#d4a853" stroke-width="4" stroke-linecap="round"/>
+          <line x1="-20" y1="-18" x2="-8" y2="-2" stroke="#d4a853" stroke-width="3" stroke-linecap="round"/>
+          <line x1="-20" y1="4" x2="-6" y2="18" stroke="#d4a853" stroke-width="3" stroke-linecap="round"/>
+          <!-- 区 — 三层框 + X -->
+          <rect x="-2" y="-24" width="28" height="18" rx="3" fill="none" stroke="#d4a853" stroke-width="2.5"/>
+          <rect x="-2" y="-2" width="28" height="18" rx="3" fill="none" stroke="#d4a853" stroke-width="2.5"/>
+          <rect x="-2" y="18" width="28" height="18" rx="3" fill="none" stroke="#d4a853" stroke-width="2.5"/>
+          <!-- 连接点 -->
+          <circle cx="22" cy="-15" r="2" fill="#d4a853"/>
+          <circle cx="22" cy="7" r="2" fill="#d4a853"/>
+          <circle cx="22" cy="27" r="2" fill="#d4a853"/>
+        </g>
+        <!-- 四角装饰 -->
+        <circle cx="22" cy="22" r="2" fill="#d4a853" opacity="0.5"/>
+        <circle cx="78" cy="22" r="2" fill="#d4a853" opacity="0.5"/>
+        <circle cx="22" cy="78" r="2" fill="#d4a853" opacity="0.5"/>
+        <circle cx="78" cy="78" r="2" fill="#d4a853" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="logo-title">MCP<span class="accent">Hub</span></div>
+    <div class="card-desc">印章形制内置"枢"字结构，取"枢纽"之意。方框 + 木字旁 + 层叠区格，兼具东方韵味与现代感。</div>
+    <div class="tags">
+      <span class="tag">印章</span>
+      <span class="tag">汉字</span>
+      <span class="tag">突破性</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Tweak: background color toggle
+  document.querySelectorAll('#tweaks button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#tweaks button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const bg = btn.dataset.bg;
+      document.querySelectorAll('.logo-display').forEach(el => {
+        switch(bg) {
+          case 'dailan': el.style.background = '#0f3460'; break;
+          case 'mo': el.style.background = '#1a1a2e'; break;
+          case 'xuanqing': el.style.background = '#16213e'; break;
+        }
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

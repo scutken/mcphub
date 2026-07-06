@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Wrench, ArrowRight, Server } from '@lucide/svelte';
+  import { Wrench, ArrowRight } from '@lucide/svelte';
+  import Logo from '$lib/components/Logo.svelte';
 
   let activeTab = $state<'tools' | 'call'>('tools');
 </script>
@@ -10,7 +11,7 @@
 
 <div class="welcome">
   <div class="welcome-icon">
-    <Server size={48} />
+    <Logo size={48} />
   </div>
   <h1 class="welcome-title">MCP<span class="accent">Hub</span></h1>
   <p class="welcome-desc">管理 MCP 服务器，发现和调用工具</p>

@@ -21,13 +21,13 @@
   <div class="sidebar-header">
     <div class="sidebar-title">
       <span class="text-liujin"><Layers size={16} /></span>
-      <span>Servers</span>
+      <span>服务器</span>
     </div>
     <div class="sidebar-actions">
-      <button class="icon-btn" title="Refresh all">
+      <button class="icon-btn" title="刷新全部">
         <RefreshCw size={14} />
       </button>
-      <button class="icon-btn icon-btn-primary" title="Add server">
+      <button class="icon-btn icon-btn-primary" title="添加服务器">
         <Plus size={14} />
       </button>
     </div>

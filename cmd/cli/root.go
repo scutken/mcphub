@@ -18,19 +18,19 @@ func NewRootCmd(hubInstance *hub.Hub) *cobra.Command {
 
 	root := &cobra.Command{
 		Use:   "mcphub",
-		Short: "MCPHub - Manage and call MCP (Model Context Protocol) servers",
-		Long: `MCPHub is a CLI tool for managing connections to MCP servers over HTTP.
+		Short: "MCPHub - MCP (Model Context Protocol) 服务器管理器",
+		Long: `MCPHub 是一个管理 HTTP MCP 服务器连接的 CLI 工具。
 
-It allows you to:
-  - Connect to MCP servers (HTTP SSE / Streamable)
-  - List available tools from connected servers
-  - Call tools with arguments
+功能：
+  - 连接 MCP 服务器（HTTP SSE / Streamable）
+  - 列出已连接服务器的工具
+  - 调用工具并传参
 
-All commands output JSON by default for easy integration with AI agents.
-Use --json=false for human-readable output.`,
+默认输出 JSON 格式，方便 AI 代理集成。
+使用 --json=false 切换为可读文本输出。`,
 	}
 
-	root.PersistentFlags().BoolP("json", "j", true, "Output in JSON format")
+	root.PersistentFlags().BoolP("json", "j", true, "以 JSON 格式输出")
 
 	root.AddCommand(newConnectCmd())
 	root.AddCommand(newDisconnectCmd())
@@ -47,10 +47,10 @@ func isJSON(cmd *cobra.Command) bool {
 	if f != nil {
 		return f.Value.String() == "true"
 	}
-	return true // default
+	return true
 }
 
-// printOutput prints data as JSON or a formatted string to the command's output.
+// printOutput prints data as JSON or a formatted string.
 func printOutput(cmd *cobra.Command, v interface{}, formatter func() string) error {
 	if isJSON(cmd) {
 		enc := json.NewEncoder(cmd.OutOrStdout())
@@ -68,16 +68,15 @@ func newConnectCmd() *cobra.Command {
 	var transport string
 
 	cmd := &cobra.Command{
-		Use:   "connect <name> <url>",
-		Short: "Connect to an MCP server",
-		Long: `Connect to an MCP server over HTTP and save the connection.
+		Use:   "connect <名称> <URL>",
+		Short: "连接一个 MCP 服务器",
+		Long: `通过 HTTP 连接 MCP 服务器并保存连接信息。
 
-The server is immediately connected and a handshake is performed.
-Transport is auto-detected (Streamable HTTP first, then SSE).
+连接建立后立即进行握手。传输协议自动检测（优先 Streamable HTTP，其次 SSE）。
 
-Examples:
+示例：
   mcphub connect my-server https://mcp.example.com
-  mcphub connect github https://api.github.com/mcp --header "Authorization: Bearer ghp_xxx"
+  mcphub connect github https://api.github.com/mcp --header "Authorization: Bearer ***"
   mcphub connect server3 https://example.com --transport sse`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,7 +87,7 @@ Examples:
 			for _, h := range headers {
 				parts := strings.SplitN(h, ":", 2)
 				if len(parts) != 2 {
-					return fmt.Errorf("invalid header format: %q (expected 'Key: Value')", h)
+					return fmt.Errorf("header 格式无效: %q（应为 'Key: Value'）", h)
 				}
 				headerMap[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 			}
@@ -97,7 +96,6 @@ Examples:
 				return err
 			}
 
-			// Show server info
 			servers, err := h.ListServers()
 			if err != nil {
 				return err
@@ -105,7 +103,7 @@ Examples:
 			for _, s := range servers {
 				if s.Name == name {
 					return printOutput(cmd, s, func() string {
-						return fmt.Sprintf("✓ Connected to %s (%s) — status: %s", s.Name, s.URL, s.Status)
+						return fmt.Sprintf("✓ 已连接 %s (%s) — 状态: %s", s.Name, s.URL, s.Status)
 					})
 				}
 			}
@@ -114,8 +112,8 @@ Examples:
 		},
 	}
 
-	cmd.Flags().StringArrayVarP(&headers, "header", "H", nil, "HTTP header (Key: Value). Can be specified multiple times.")
-	cmd.Flags().StringVarP(&transport, "transport", "t", "auto", "Transport type: auto, sse, streamable")
+	cmd.Flags().StringArrayVarP(&headers, "header", "H", nil, "HTTP 请求头 (Key: Value)，可多次指定")
+	cmd.Flags().StringVarP(&transport, "transport", "t", "auto", "传输协议: auto, sse, streamable")
 
 	return cmd
 }
@@ -124,8 +122,8 @@ Examples:
 
 func newDisconnectCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "disconnect <name>",
-		Short: "Disconnect and remove an MCP server",
+		Use:   "disconnect <名称>",
+		Short: "断开并移除一个 MCP 服务器",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
@@ -134,7 +132,7 @@ func newDisconnectCmd() *cobra.Command {
 			}
 
 			return printOutput(cmd, map[string]string{"status": "disconnected", "server": name}, func() string {
-				return fmt.Sprintf("✓ Disconnected %s", name)
+				return fmt.Sprintf("✓ 已断开 %s", name)
 			})
 		},
 	}
@@ -148,7 +146,7 @@ func newListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"servers", "ls"},
-		Short:   "List all configured MCP servers",
+		Short:   "列出所有已配置的 MCP 服务器",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			servers, err := h.ListServers()
 			if err != nil {
@@ -157,10 +155,10 @@ func newListCmd() *cobra.Command {
 
 			return printOutput(cmd, servers, func() string {
 				if len(servers) == 0 {
-					return "No servers configured. Use 'mcphub connect' to add one."
+					return "暂无已配置的服务器。使用 'mcphub connect' 添加一个。"
 				}
 				var b strings.Builder
-				fmt.Fprintf(&b, "Servers (%d):\n", len(servers))
+				fmt.Fprintf(&b, "服务器 (%d):\n", len(servers))
 				for _, s := range servers {
 					statusIcon := "○"
 					if s.Status == "connected" {
@@ -180,10 +178,10 @@ func newListCmd() *cobra.Command {
 
 func newToolsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "tools [server]",
-		Short: "List tools from a server (or all servers)",
-		Long: `List available tools. If a server name is provided, lists tools from that server only.
-Without a server name, lists tools from all connected servers.`,
+		Use:   "tools [服务器名]",
+		Short: "列出服务器（或全部服务器）的工具",
+		Long: `列出可用的工具。如果指定服务器名，则只列出该服务器的工具。
+不指定服务器名时，列出所有已连接服务器的工具。`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverName := ""
@@ -198,17 +196,17 @@ Without a server name, lists tools from all connected servers.`,
 
 			return printOutput(cmd, tools, func() string {
 				if len(tools) == 0 {
-					return "No tools available. Connect to a server first."
+					return "暂无可用工具。请先连接一个服务器。"
 				}
 				var b strings.Builder
 				for _, t := range tools {
-					fmt.Fprintf(&b, "Server: %s\n", t.Server)
-					fmt.Fprintf(&b, "  Tool: %s\n", t.Name)
+					fmt.Fprintf(&b, "服务器: %s\n", t.Server)
+					fmt.Fprintf(&b, "  工具: %s\n", t.Name)
 					if t.Description != "" {
-						fmt.Fprintf(&b, "  Description: %s\n", t.Description)
+						fmt.Fprintf(&b, "  描述: %s\n", t.Description)
 					}
 					if t.InputSchema.Properties != nil {
-						fmt.Fprintf(&b, "  Parameters:\n")
+						fmt.Fprintf(&b, "  参数:\n")
 						for name, prop := range t.InputSchema.Properties {
 							p, _ := prop.(map[string]interface{})
 							desc, _ := p["description"].(string)
@@ -232,11 +230,11 @@ func newCallCmd() *cobra.Command {
 	var callArgs string
 
 	cmd := &cobra.Command{
-		Use:   "call <server> <tool>",
-		Short: "Call a tool on an MCP server",
-		Long: `Call a tool on a connected MCP server with JSON arguments.
+		Use:   "call <服务器名> <工具名>",
+		Short: "调用 MCP 服务器上的工具",
+		Long: `调用已连接 MCP 服务器上的工具，传入 JSON 参数。
 
-Examples:
+示例：
   mcphub call github search_repos --args '{"query": "mcp"}'
   mcphub call time get_current_time`,
 		Args: cobra.ExactArgs(2),
@@ -247,7 +245,7 @@ Examples:
 			var parsedArgs map[string]interface{}
 			if callArgs != "" {
 				if err := json.Unmarshal([]byte(callArgs), &parsedArgs); err != nil {
-					return fmt.Errorf("invalid JSON args: %w", err)
+					return fmt.Errorf("JSON 参数无效: %w", err)
 				}
 			}
 
@@ -259,9 +257,9 @@ Examples:
 			return printOutput(cmd, result, func() string {
 				var b strings.Builder
 				if result.IsError {
-					fmt.Fprintf(&b, "Error from %s/%s:\n", serverName, toolName)
+					fmt.Fprintf(&b, "%s/%s 返回错误:\n", serverName, toolName)
 				} else {
-					fmt.Fprintf(&b, "Result from %s/%s:\n", serverName, toolName)
+					fmt.Fprintf(&b, "%s/%s 返回结果:\n", serverName, toolName)
 				}
 				for _, c := range result.Content {
 					if c.Type == "text" {
@@ -275,7 +273,7 @@ Examples:
 		},
 	}
 
-	cmd.Flags().StringVarP(&callArgs, "args", "a", "", "Tool arguments as JSON string")
+	cmd.Flags().StringVarP(&callArgs, "args", "a", "", "工具参数，JSON 字符串格式")
 
 	return cmd
 }
