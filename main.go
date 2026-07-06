@@ -14,6 +14,15 @@ import (
 )
 
 func main() {
+	// Check mode early for console attachment on Windows
+	args := os.Args[1:]
+	isServe := len(args) > 0 && args[0] == "serve"
+
+	// On Windows GUI subsystem, attach to parent console for CLI mode
+	if !isServe {
+		attachConsole()
+	}
+
 	// Initialize config store
 	store, err := config.NewDefaultStore()
 	if err != nil {
@@ -32,10 +41,6 @@ func main() {
 
 	// Build CLI root command
 	rootCmd := cli.NewRootCmd(h)
-
-	// Check if "serve" subcommand is requested (launch GUI)
-	args := os.Args[1:]
-	isServe := len(args) > 0 && args[0] == "serve"
 
 	if isServe {
 		// Launch Wails GUI
