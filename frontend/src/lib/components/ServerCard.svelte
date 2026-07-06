@@ -29,7 +29,7 @@
     <div class="server-name">{server.name}</div>
     <div class="server-url">{server.url}</div>
   </div>
-  <ChevronRight size={14} class="chevron" />
+  <span class="chevron"><ChevronRight size={14} /></span>
 </button>
 
 <style>

@@ -20,7 +20,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <div class="sidebar-title">
-      <Layers size={16} class="text-liujin" />
+      <span class="text-liujin"><Layers size={16} /></span>
       <span>Servers</span>
     </div>
     <div class="sidebar-actions">
