@@ -8,20 +8,29 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+var (
+	kernel32           = windows.NewLazySystemDLL("kernel32.dll")
+	procAttachConsole  = kernel32.NewProc("AttachConsole")
+	procGetStdHandle   = kernel32.NewProc("GetStdHandle")
+)
+
 // attachConsole attaches to the parent console for CLI mode on Windows.
 // Wails builds GUI-subsystem executables by default, which have no console.
 func attachConsole() {
-	const ATTACH_PARENT_PROCESS = ^uint32(0)
+	const ATTACH_PARENT_PROCESS = ^uintptr(0) // (DWORD)-1
 
-	windows.AttachConsole(ATTACH_PARENT_PROCESS)
+	procAttachConsole.Call(ATTACH_PARENT_PROCESS)
 
-	// Reopen stdout to the attached console
-	stdout, _ := windows.GetStdHandle(windows.STD_OUTPUT_HANDLE)
-	if stdout != windows.InvalidHandle {
-		os.Stdout = os.NewFile(uintptr(stdout), "/dev/stdout")
+	// Reopen stdout/stderr to the attached console
+	const STD_OUTPUT_HANDLE = ^uintptr(10) // -11 as uintptr
+	const STD_ERROR_HANDLE  = ^uintptr(11) // -12 as uintptr
+
+	hOut, _, _ := procGetStdHandle.Call(STD_OUTPUT_HANDLE)
+	if hOut != 0 && hOut != uintptr(windows.InvalidHandle) {
+		os.Stdout = os.NewFile(hOut, "/dev/stdout")
 	}
-	stderr, _ := windows.GetStdHandle(windows.STD_ERROR_HANDLE)
-	if stderr != windows.InvalidHandle {
-		os.Stderr = os.NewFile(uintptr(stderr), "/dev/stderr")
+	hErr, _, _ := procGetStdHandle.Call(STD_ERROR_HANDLE)
+	if hErr != 0 && hErr != uintptr(windows.InvalidHandle) {
+		os.Stderr = os.NewFile(hErr, "/dev/stderr")
 	}
 }
