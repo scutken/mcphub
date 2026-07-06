@@ -38,7 +38,7 @@
         <span class="param-count">{params.length}</span>
       {/if}
     </div>
-    <ChevronRight size={14} class="expand-icon" class:rotated={showParams} />
+    <ChevronRight size={14} class="expand-icon {showParams ? 'rotated' : ''}" />
   </button>
 
   {#if tool.description}
