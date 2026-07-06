@@ -1,0 +1,290 @@
+package hub
+
+import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/scutken/mcphub/pkg/config"
+	"github.com/scutken/mcphub/pkg/mcp"
+)
+
+// ServerInfo combines config and runtime state for a server.
+type ServerInfo struct {
+	Name      string `json:"name"`
+	URL       string `json:"url"`
+	Transport string `json:"transport"`
+	Status    string `json:"status"` // "connected", "disconnected", "error"
+	Error     string `json:"error,omitempty"`
+	AddedAt   string `json:"added_at"`
+}
+
+// ToolInfo represents a tool from a server.
+type ToolInfo struct {
+	Server      string        `json:"server"`
+	Name        string        `json:"name"`
+	Description string        `json:"description,omitempty"`
+	InputSchema mcp.InputSchema `json:"inputSchema"`
+}
+
+// CallResult is the result of a tool call.
+type CallResult struct {
+	Server  string           `json:"server"`
+	Tool    string           `json:"tool"`
+	IsError bool             `json:"isError"`
+	Content []mcp.Content    `json:"content"`
+}
+
+// Hub is the unified service layer for managing MCP connections.
+// It is used by both the CLI and GUI.
+type Hub struct {
+	config  *config.Store
+	clients map[string]*mcp.Client
+	mu      sync.RWMutex
+}
+
+// New creates a new Hub with the given config store.
+func New(store *config.Store) *Hub {
+	return &Hub{
+		config:  store,
+		clients: make(map[string]*mcp.Client),
+	}
+}
+
+// Connect adds and connects to an MCP server.
+func (h *Hub) Connect(name, url string, headers map[string]string, transport string) error {
+	// Validate URL scheme
+	if url == "" {
+		return fmt.Errorf("URL is required")
+	}
+
+	// Save to config first
+	server := config.Server{
+		Name:      name,
+		URL:       url,
+		Headers:   headers,
+		Transport: transport,
+		AddedAt:   time.Now(),
+	}
+
+	if err := h.config.AddServer(server); err != nil {
+		return fmt.Errorf("save config: %w", err)
+	}
+
+	// Connect
+	transportType := mcp.TransportAuto
+	switch transport {
+	case "sse":
+		transportType = mcp.TransportSSE
+	case "streamable":
+		transportType = mcp.TransportStreamable
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	client, err := mcp.Connect(ctx, url, headers, transportType)
+	if err != nil {
+		return fmt.Errorf("connect to server: %w", err)
+	}
+
+	h.mu.Lock()
+	// Close any existing connection for this server
+	if old, ok := h.clients[name]; ok {
+		old.Close()
+	}
+	h.clients[name] = client
+	h.mu.Unlock()
+
+	return nil
+}
+
+// Disconnect removes a server connection.
+func (h *Hub) Disconnect(name string) error {
+	h.mu.Lock()
+	if client, ok := h.clients[name]; ok {
+		client.Close()
+		delete(h.clients, name)
+	}
+	h.mu.Unlock()
+
+	return h.config.RemoveServer(name)
+}
+
+// getClient returns the connected client for a server, or an error.
+func (h *Hub) getClient(name string) (*mcp.Client, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	client, ok := h.clients[name]
+	if !ok {
+		return nil, fmt.Errorf("server %q is not connected", name)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("server %q is disconnected", name)
+	}
+
+	return client, nil
+}
+
+// ListServers returns all configured servers with their runtime status.
+func (h *Hub) ListServers() ([]ServerInfo, error) {
+	servers, err := h.config.ListServers()
+	if err != nil {
+		return nil, err
+	}
+
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	result := make([]ServerInfo, 0, len(servers))
+	for _, s := range servers {
+		info := ServerInfo{
+			Name:      s.Name,
+			URL:       s.URL,
+			Transport: s.Transport,
+			AddedAt:   s.AddedAt.Format(time.RFC3339),
+			Status:    "disconnected",
+		}
+
+		if client, ok := h.clients[s.Name]; ok && client.IsConnected() {
+			info.Status = "connected"
+		} else if _, ok := h.clients[s.Name]; ok {
+			info.Status = "error"
+			info.Error = "connection lost"
+		}
+
+		result = append(result, info)
+	}
+
+	return result, nil
+}
+
+// ListTools returns tools from the specified server, or all servers if server is empty.
+func (h *Hub) ListTools(serverName string) ([]ToolInfo, error) {
+	if serverName != "" {
+		client, err := h.getClient(serverName)
+		if err != nil {
+			return nil, err
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		tools, err := client.ListTools(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list tools from %q: %w", serverName, err)
+		}
+
+		var result []ToolInfo
+		for _, t := range tools {
+			result = append(result, ToolInfo{
+				Server:      serverName,
+				Name:        t.Name,
+				Description: t.Description,
+				InputSchema: t.InputSchema,
+			})
+		}
+		return result, nil
+	}
+
+	// List all servers' tools
+	servers, err := h.config.ListServers()
+	if err != nil {
+		return nil, err
+	}
+
+	var allTools []ToolInfo
+	for _, s := range servers {
+		client, err := h.getClient(s.Name)
+		if err != nil {
+			continue // Skip disconnected servers
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		tools, err := client.ListTools(ctx)
+		cancel()
+		if err != nil {
+			continue
+		}
+
+		for _, t := range tools {
+			allTools = append(allTools, ToolInfo{
+				Server:      s.Name,
+				Name:        t.Name,
+				Description: t.Description,
+				InputSchema: t.InputSchema,
+			})
+		}
+	}
+
+	return allTools, nil
+}
+
+// CallTool invokes a tool on the specified server.
+func (h *Hub) CallTool(serverName, toolName string, args map[string]interface{}) (*CallResult, error) {
+	client, err := h.getClient(serverName)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	result, err := client.CallTool(ctx, toolName, args)
+	if err != nil {
+		return nil, fmt.Errorf("call tool %q on %q: %w", toolName, serverName, err)
+	}
+
+	return &CallResult{
+		Server:  serverName,
+		Tool:    toolName,
+		IsError: result.IsError,
+		Content: result.Content,
+	}, nil
+}
+
+// ReconnectAll attempts to reconnect all configured servers at startup.
+func (h *Hub) ReconnectAll() error {
+	servers, err := h.config.ListServers()
+	if err != nil {
+		return err
+	}
+
+	for _, s := range servers {
+		transportType := mcp.TransportAuto
+		switch s.Transport {
+		case "sse":
+			transportType = mcp.TransportSSE
+		case "streamable":
+			transportType = mcp.TransportStreamable
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		client, err := mcp.Connect(ctx, s.URL, s.Headers, transportType)
+		cancel()
+
+		if err != nil {
+			continue // Silently skip offline servers
+		}
+
+		h.mu.Lock()
+		h.clients[s.Name] = client
+		h.mu.Unlock()
+	}
+
+	return nil
+}
+
+// Close disconnects all servers.
+func (h *Hub) Close() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	for name, client := range h.clients {
+		client.Close()
+		delete(h.clients, name)
+	}
+}
