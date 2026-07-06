@@ -35,15 +35,12 @@ jobs:
           $env:PATH = "$env:USERPROFILE\go\bin;$env:PATH"
           wails build -platform windows/amd64 -ldflags "-s -w" -o mcphub.exe
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mcphub-windows-amd64
-          path: build/bin/mcphub.exe
-
-      - name: Create Release (on tag)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Upload to Nightly Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: nightly
+          name: "Nightly Build"
+          body: "Latest build from main branch."
           files: build/bin/mcphub.exe
-          generate_release_notes: true
+          prerelease: true
+          make_latest: true
