@@ -132,7 +132,7 @@
     flex-shrink: 0;
   }
 
-  .expand-icon.rotated {
+  .expand-icon :global(.rotated) {
     transform: rotate(90deg);
   }
 
