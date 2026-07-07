@@ -1,0 +1,26 @@
+{
+  "FixedFileInfo": {
+    "FileVersion": {"Major": 1, "Minor": 0, "Patch": 0, "Build": 0},
+    "ProductVersion": {"Major": 1, "Minor": 0, "Patch": 0, "Build": 0},
+    "FileFlagsMask": "3f",
+    "FileFlags": "0",
+    "FileOS": "40004",
+    "FileType": "1",
+    "FileSubType": "0"
+  },
+  "StringFileInfo": {
+    "CompanyName": "MCPHub",
+    "FileDescription": "MCPHub - MCP Server Manager",
+    "FileVersion": "1.0.0.0",
+    "InternalName": "mcphub",
+    "LegalCopyright": "MIT",
+    "OriginalFilename": "mcphub.exe",
+    "ProductName": "MCPHub",
+    "ProductVersion": "1.0.0.0"
+  },
+  "VarFileInfo": {
+    "Translation": {"LangID": "0804", "CharsetID": "04B0"}
+  },
+  "IconPath": "build/windows/icon.ico",
+  "ManifestPath": ""
+}
