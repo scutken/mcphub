@@ -46,17 +46,23 @@ mcphub serve
 
 将 MCPHub 注册为 OpenCode 的 skill，让 AI Agent 自动发现和调用 MCP 工具：
 
-```bash
+```powershell
 # 方式一：软链接（推荐，跟随项目更新）
-New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.config\opencode\skills\mcphub" -Target (Resolve-Path skills)
+New-Item -ItemType SymbolicLink `
+  -Path "$env:USERPROFILE\.config\opencode\skills\mcphub" `
+  -Target (Resolve-Path skills\mcphub)
 
 # 方式二：直接复制
-Copy-Item -Recurse skills "$env:USERPROFILE\.config\opencode\skills\mcphub"
+Copy-Item -Recurse skills\mcphub "$env:USERPROFILE\.config\opencode\skills\mcphub"
 ```
 
 安装后 Agent 即可通过 `mcphub tools` / `mcphub call` 按需访问 MCP 工具，无需在上下文中配置 MCP 服务器。
 
-Skill 文件：`skills/mcphub.md` — 包含完整的 CLI 命令参考和工作流。
+Skill 结构：
+```
+skills/mcphub/
+└── SKILL.md    ← Agent 使用说明（CLI 命令参考 + 工作流）
+```
 
 ## 从源码构建
 
@@ -110,7 +116,9 @@ mcphub/
 │       ├── routes/           # 页面路由
 │       └── lib/components/   # UI 组件
 │
-├── skills/mcphub.md          # AI Agent 使用说明
+├── skills/
+│   └── mcphub/
+│       └── SKILL.md            # AI Agent skill（CLI 命令 + 工作流）
 └── .github/workflows/        # Windows 构建 CI
 ```
 
