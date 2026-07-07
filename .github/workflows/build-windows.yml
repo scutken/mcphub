@@ -45,7 +45,6 @@ jobs:
 
       - name: Read changelog for version
         if: startsWith(github.ref, 'refs/tags/v')
-        id: changelog
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
@@ -56,17 +55,14 @@ jobs:
             Write-Error "No changelog entry for version $version"
             exit 1
           }
-          $changes = $match.Value.Trim()
-          "changes<<EOF" >> $env:GITHUB_OUTPUT
-          $changes >> $env:GITHUB_OUTPUT
-          "EOF" >> $env:GITHUB_OUTPUT
+          $match.Value.Trim() | Out-File -FilePath $env:RUNNER_TEMP\release-notes.md -Encoding utf8NoBOM
 
       - name: Upload to Versioned Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.changes }}
+          body_path: ${{ runner.temp }}/release-notes.md
           files: build/bin/mcphub.exe
           make_latest: true
 
