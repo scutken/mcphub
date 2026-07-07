@@ -42,19 +42,21 @@ mcphub disconnect github
 mcphub serve
 ```
 
-### 在 AI Agent 中使用
+### 安装 Agent Skill
 
-在 OpenCode / Claude Code 的 skill 或 system prompt 中嵌入：
+将 MCPHub 注册为 OpenCode 的 skill，让 AI Agent 自动发现和调用 MCP 工具：
 
 ```bash
-# 发现工具
-mcphub tools <server>
+# 方式一：软链接（推荐，跟随项目更新）
+New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\.config\opencode\skills\mcphub" -Target (Resolve-Path skills)
 
-# 调用工具
-mcphub call <server> <tool> --args '<JSON>'
+# 方式二：直接复制
+Copy-Item -Recurse skills "$env:USERPROFILE\.config\opencode\skills\mcphub"
 ```
 
-详见 `skills/mcphub.md`。
+安装后 Agent 即可通过 `mcphub tools` / `mcphub call` 按需访问 MCP 工具，无需在上下文中配置 MCP 服务器。
+
+Skill 文件：`skills/mcphub.md` — 包含完整的 CLI 命令参考和工作流。
 
 ## 从源码构建
 

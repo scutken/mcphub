@@ -1,11 +1,6 @@
 ---
 name: mcphub
-description: "使用 mcphub CLI/GUI 发现并调用 MCP 工具。按需访问，不占模型上下文。"
-version: 1.1.0
-platforms: [windows]
-metadata:
-  hermes:
-    tags: [mcp, cli, tools, tool-calling, gui]
+description: "使用 mcphub CLI 发现并调用 MCP 工具。按需访问，不占模型上下文。适用于已通过 mcphub connect 连接了 MCP 服务器的场景。"
 ---
 
 # MCPHub — MCP 工具管理器
