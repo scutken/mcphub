@@ -43,13 +43,10 @@ jobs:
           $env:PATH = "$env:USERPROFILE\go\bin;$env:PATH"
           wails build -platform windows/amd64 -ldflags "-s -w" -o mcphub.exe
 
-      - name: Create or update versioned release
+      - name: Extract changelog notes
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          $ErrorActionPreference = 'Stop'
           $version = "${{ github.ref_name }}".TrimStart('v')
           $content = Get-Content -Raw CHANGELOG.md
           $pattern = "(?s)## \[$version\].*?(?=## \[|\z)"
@@ -58,18 +55,18 @@ jobs:
             Write-Error "No changelog entry for version $version"
             exit 1
           }
-          $notesPath = Join-Path $env:RUNNER_TEMP "release-notes.md"
-          $match.Value.Trim() | Out-File -FilePath $notesPath -Encoding utf8NoBOM
+          $match.Value.Trim() | Out-File -FilePath release-notes.md -Encoding utf8NoBOM
 
-          gh release view "${{ github.ref_name }}" --json id 2>&1 | Out-Null
-          if ($LASTEXITCODE -eq 0) {
-            Write-Output "Release exists, editing notes and re-uploading asset..."
-            gh release edit "${{ github.ref_name }}" --title "Release ${{ github.ref_name }}" --notes-file "$notesPath"
-            gh release upload "${{ github.ref_name }}" build/bin/mcphub.exe --clobber
-          } else {
-            Write-Output "Creating new release..."
-            gh release create "${{ github.ref_name }}" build/bin/mcphub.exe --title "Release ${{ github.ref_name }}" --notes-file "$notesPath" --latest
-          }
+      - name: Upload to Versioned Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          bodyFile: release-notes.md
+          artifacts: build/bin/mcphub.exe
+          makeLatest: true
+          allowUpdates: true
 
       - name: Upload to Nightly Release
         if: github.ref == 'refs/heads/main'
