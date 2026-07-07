@@ -50,7 +50,7 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
           $content = Get-Content -Raw CHANGELOG.md
-          $pattern = "(?ms)## \[$version\].*?(?=## \[|$)"
+          $pattern = "(?s)## \[$version\].*?(?=## \[|\z)"
           $match = [regex]::Match($content, $pattern)
           if (-not $match.Success) {
             Write-Error "No changelog entry for version $version"
