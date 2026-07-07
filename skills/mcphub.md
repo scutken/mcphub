@@ -1,141 +1,122 @@
 ---
 name: mcphub
-description: "Use the mcphub CLI to discover and call MCP (Model Context Protocol) tools from configured servers. On-demand MCP access without context overhead."
-version: 1.0.0
+description: "使用 mcphub CLI/GUI 发现并调用 MCP 工具。按需访问，不占模型上下文。"
+version: 1.1.0
 platforms: [windows]
 metadata:
   hermes:
-    tags: [mcp, cli, tools, tool-calling]
+    tags: [mcp, cli, tools, tool-calling, gui]
 ---
 
-# MCPHub CLI — On-Demand MCP Tool Access
+# MCPHub — MCP 工具管理器
 
-## Overview
+## 是什么
 
-This skill provides instructions for using the `mcphub` CLI to interact with MCP (Model Context Protocol) servers. Instead of configuring MCP servers directly in the model's context, use `mcphub` CLI commands on demand to discover tools and call them. Output is JSON by default for easy parsing.
+MCPHub 管理 HTTP MCP 服务器的连接、工具发现和调用。两种使用方式：
 
-## Prerequisites
+- **CLI**：`mcphub` 命令行，JSON 输出，适合 AI 代理集成
+- **GUI**：Wails 桌面应用，`wails dev` 启动，可视化操作
 
-- `mcphub.exe` must be available in PATH
-- Servers must be pre-connected by the user via `mcphub connect`
-
-## Commands
-
-### List connected servers
+## CLI 命令速查
 
 ```bash
+# 查看已连接服务器
 mcphub list
-# or: mcphub servers, mcphub ls
+
+# 连接服务器（支持 Session 管理、Streamable/SSE 自动检测）
+mcphub connect <名称> <URL> --header "Key: Value"
+
+# 查工具列表
+mcphub tools <服务器名>        # 指定服务器
+mcphub tools                   # 全部服务器
+
+# 调用工具
+mcphub call <服务器> <工具名> --args '{"k":"v"}'
+mcphub call <服务器> <工具名>                    # 无参调用
+
+# 可读文本
+mcphub list --json=false
 ```
 
-Returns JSON array of server info with connection status:
-```json
-[
-  {
-    "name": "github",
-    "url": "https://api.github.com/mcp",
-    "transport": "auto",
-    "status": "connected",
-    "added_at": "2026-07-06T10:00:00Z"
-  }
-]
-```
-
-### Discover tools from a server
+## GUI 开发
 
 ```bash
-mcphub tools <server-name>
-# Example: mcphub tools github
+# 启动开发模式（Windows）
+wails dev
+
+# 或者用 bat 脚本
+dev.bat
 ```
 
-Returns JSON array of tool definitions:
-```json
-[
-  {
-    "server": "github",
-    "name": "search_repositories",
-    "description": "Search GitHub repositories",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "query": {"type": "string", "description": "Search query keywords"},
-        "page": {"type": "integer", "description": "Page number (default: 1)"}
-      },
-      "required": ["query"]
-    }
-  }
-]
-```
+启动后 WebView2 窗口自动弹出，Vite dev server 在 `localhost:5173`，Wails 代理在 `localhost:34115`。
 
-To list tools from ALL connected servers (omit server name):
-```bash
-mcphub tools
-```
+## 工作流
 
-### Call a tool
+### 1. 看有什么
 
 ```bash
-mcphub call <server-name> <tool-name> --args '<JSON-args>'
-# Example: mcphub call github search_repositories --args '{"query":"mcp server"}'
+mcphub list          # 服务器列表 + 连接状态
+mcphub tools         # 所有服务器的工具总览
 ```
 
-Returns JSON result:
+### 2. 看工具怎么用
+
+查 `inputSchema.properties`，每项含 `type`、`description`、是否 `required`。
+
+### 3. 调工具
+
+```bash
+mcphub call utools utools.z6htitix.get_date_info --args '{"date":"2026-07-06"}'
+```
+
+### 4. 解析结果
+
+- `isError: false` → `content[].text` 是结果
+- `isError: true` → `content[].text` 是错误信息
+- 非零退出码 → 命令本身失败（网络、未连接等），看 stderr
+
+## JSON 输出示例
+
+连接服务器：
 ```json
 {
-  "server": "github",
-  "tool": "search_repositories",
+  "name": "utools",
+  "url": "http://127.0.0.1:3501/mcp",
+  "transport": "auto",
+  "status": "connected",
+  "added_at": "2026-07-06T20:08:36+08:00"
+}
+```
+
+调用工具：
+```json
+{
+  "server": "utools",
+  "tool": "utools.z6htitix.search_next_festival",
   "isError": false,
   "content": [
     {
       "type": "text",
-      "text": "Found 42 repositories matching 'mcp server'..."
+      "text": "{\"festival_name\":\"中秋节\",\"date\":\"2026-09-25\",\"days_from_today\":81}"
     }
   ]
 }
 ```
 
-### Human-readable output
+## 支持的传输协议
 
-Add `--json=false` to any command for formatted text output:
-```bash
-mcphub tools github --json=false
-```
+| 类型 | 说明 |
+|------|------|
+| `auto` | 自动检测（默认，先试 Streamable） |
+| `streamable` | MCP Streamable HTTP (2025 规范) |
+| `sse` | Server-Sent Events (2024 规范) |
 
-## Workflow Pattern
+Session 管理（`Mcp-Session-Id`）自动处理，无需手动干预。
 
-When you need external data or actions, follow these steps:
+## 注意事项
 
-### Step 1: Check what's available
-
-```bash
-mcphub list      # see all connected servers
-mcphub tools     # see all available tools across servers
-```
-
-### Step 2: Read the tool schema
-
-Look at `inputSchema.properties` to understand required and optional parameters. Each property has `type` and `description` fields.
-
-### Step 3: Call the tool
-
-Construct a JSON string for `--args` matching the schema:
-```bash
-mcphub call <server> <tool> --args '{"param1":"value1","param2":42}'
-```
-
-### Step 4: Use the result
-
-Parse the JSON output. `content[].text` contains human-readable text results. `isError: true` means the tool reported an error.
-
-## Error Handling
-
-- If `mcphub` returns non-zero exit code → the command itself failed (e.g., server not connected, network error). Read stderr.
-- If exit code is 0 but `isError: true` in the JSON → the tool call succeeded but the tool reported a logical error (e.g., invalid arguments).
-- If exit code is 0 and `isError: false` → success, use the content.
-
-## Important Notes
-
-- **Default output is JSON** — always parse with a JSON parser, not regex
-- **Connection management** — servers must be pre-configured by the user via `mcphub connect`. You cannot add servers at runtime.
-- **No streaming** — tool calls are synchronous request/response. Set reasonable timeouts.
-- **Headers/Secrets** — authentication headers are stored in config and included automatically. You do not need to (and cannot) pass them on each call.
+- **输出默认 JSON**——用 JSON 解析器，别用正则
+- **服务器需预先连接**——AGENT 不能自动加服务器，用户需先 `mcphub connect`
+- **同步调用**——无流式，超时 120 秒
+- **请求头自动附带**——`connect` 时存的 headers 后续调用自动带上
+- **GUI 模式会话独立**——CLI 和 GUI 各自维护连接，互不影响
