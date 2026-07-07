@@ -1,8 +1,8 @@
 package main
 
 import (
+	"embed"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/scutken/mcphub/cmd/cli"
@@ -13,6 +13,9 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
+
+//go:embed all:frontend/dist
+var assets embed.FS
 
 func main() {
 	// Check mode early for console attachment on Windows
@@ -55,9 +58,7 @@ func main() {
 			MinWidth:  800,
 			MinHeight: 600,
 			AssetServer: &assetserver.Options{
-				// 通过 Handler 校验，dev 模式下 Wails 自动替换为 Vite dev server
-				// 生产 build 时 Wails 会替换为 embedded assets
-				Handler: http.FileServer(http.Dir("frontend/dist")),
+				Assets: assets,
 			},
 			OnStartup:  app.startup,
 			OnShutdown: app.shutdown,
