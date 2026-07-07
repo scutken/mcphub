@@ -34,7 +34,7 @@ func NewRootCmd(hubInstance *hub.Hub) *cobra.Command {
 
 	root.AddCommand(newConnectCmd())
 	root.AddCommand(newDisconnectCmd())
-	root.AddCommand(newListCmd())
+	root.AddCommand(newServersCmd())
 	root.AddCommand(newToolsCmd())
 	root.AddCommand(newCallCmd())
 
@@ -140,13 +140,12 @@ func newDisconnectCmd() *cobra.Command {
 	return cmd
 }
 
-// ==================== list / servers ====================
+// ==================== servers ====================
 
-func newListCmd() *cobra.Command {
+func newServersCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"servers", "ls"},
-		Short:   "列出所有已配置的 MCP 服务器",
+		Use:   "servers",
+		Short: "列出所有已配置的 MCP 服务器",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			servers, err := h.ListServers()
 			if err != nil {
@@ -177,49 +176,105 @@ func newListCmd() *cobra.Command {
 // ==================== tools ====================
 
 func newToolsCmd() *cobra.Command {
+	var search string
+
 	cmd := &cobra.Command{
-		Use:   "tools [服务器名]",
-		Short: "列出服务器（或全部服务器）的工具",
-		Long: `列出可用的工具。如果指定服务器名，则只列出该服务器的工具。
-不指定服务器名时，列出所有已连接服务器的工具。`,
-		Args: cobra.MaximumNArgs(1),
+		Use:   "tools [服务器名] [工具名...]",
+		Short: "列出工具摘要，或获取指定工具的完整 schema",
+		Long: `渐进式工具发现：
+  - 默认输出工具摘要（server/name/description），不含 inputSchema。
+  - --search/-s <keyword> 按关键字搜索工具名或描述（大小写不敏感）。
+  - 获取完整 schema 时必须指定服务器，可一次传多个工具名。`,
+		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverName := ""
+			var toolNames []string
+
 			if len(args) > 0 {
 				serverName = args[0]
+				toolNames = args[1:]
 			}
 
-			tools, err := h.ListTools(serverName)
+			// 获取 schema 必须指定服务器
+			if len(toolNames) > 0 && serverName == "" {
+				return fmt.Errorf("获取工具 schema 时必须指定服务器")
+			}
+
+			// 有工具名 → 返回完整 ToolInfo
+			if len(toolNames) > 0 {
+				tools, err := h.GetTools(serverName, toolNames)
+				if err != nil {
+					return err
+				}
+				return printOutput(cmd, tools, func() string {
+					var b strings.Builder
+					for _, t := range tools {
+						fmt.Fprintf(&b, "服务器: %s\n", t.Server)
+						fmt.Fprintf(&b, "  工具: %s\n", t.Name)
+						if t.Description != "" {
+							fmt.Fprintf(&b, "  描述: %s\n", t.Description)
+						}
+						if t.InputSchema.Properties != nil {
+							fmt.Fprintf(&b, "  参数:\n")
+							for name, prop := range t.InputSchema.Properties {
+								p, _ := prop.(map[string]interface{})
+								desc, _ := p["description"].(string)
+								typ, _ := p["type"].(string)
+								fmt.Fprintf(&b, "    - %s (%s): %s\n", name, typ, desc)
+							}
+						}
+						fmt.Fprintln(&b)
+					}
+					return b.String()
+				})
+			}
+
+			// --search → 搜索摘要
+			if search != "" {
+				summaries, err := h.SearchToolSummaries(serverName, search)
+				if err != nil {
+					return err
+				}
+				return printOutput(cmd, summaries, func() string {
+					if len(summaries) == 0 {
+						return fmt.Sprintf("未找到包含 %q 的工具。", search)
+					}
+					var b strings.Builder
+					fmt.Fprintf(&b, "搜索结果 (%d):\n", len(summaries))
+					for _, s := range summaries {
+						fmt.Fprintf(&b, "  %-20s %-30s %s\n", s.Server, s.Name, s.Description)
+					}
+					return b.String()
+				})
+			}
+
+			// 默认 → 摘要列表
+			summaries, err := h.ListToolSummaries(serverName)
 			if err != nil {
 				return err
 			}
-
-			return printOutput(cmd, tools, func() string {
-				if len(tools) == 0 {
+			return printOutput(cmd, summaries, func() string {
+				if len(summaries) == 0 {
 					return "暂无可用工具。请先连接一个服务器。"
 				}
 				var b strings.Builder
-				for _, t := range tools {
-					fmt.Fprintf(&b, "服务器: %s\n", t.Server)
-					fmt.Fprintf(&b, "  工具: %s\n", t.Name)
-					if t.Description != "" {
-						fmt.Fprintf(&b, "  描述: %s\n", t.Description)
-					}
-					if t.InputSchema.Properties != nil {
-						fmt.Fprintf(&b, "  参数:\n")
-						for name, prop := range t.InputSchema.Properties {
-							p, _ := prop.(map[string]interface{})
-							desc, _ := p["description"].(string)
-							typ, _ := p["type"].(string)
-							fmt.Fprintf(&b, "    - %s (%s): %s\n", name, typ, desc)
+				currentServer := ""
+				for _, s := range summaries {
+					if s.Server != currentServer {
+						if currentServer != "" {
+							fmt.Fprintln(&b)
 						}
+						fmt.Fprintf(&b, "%s:\n", s.Server)
+						currentServer = s.Server
 					}
-					fmt.Fprintln(&b)
+					fmt.Fprintf(&b, "  %-30s %s\n", s.Name, s.Description)
 				}
 				return b.String()
 			})
 		},
 	}
+
+	cmd.Flags().StringVarP(&search, "search", "s", "", "按关键字搜索工具名或描述")
 
 	return cmd
 }

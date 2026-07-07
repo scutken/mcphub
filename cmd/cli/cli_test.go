@@ -30,7 +30,7 @@ func TestCLIIntegration(t *testing.T) {
 	defer h.Close()
 
 	// Test 1: List servers (empty, JSON)
-	output := runCommand(t, h, "list")
+	output := runCommand(t, h, "servers")
 	var servers []hub.ServerInfo
 	if err := json.Unmarshal([]byte(output), &servers); err != nil {
 		t.Fatalf("parse list JSON: %v\nOutput: %s", err, output)
@@ -50,7 +50,7 @@ func TestCLIIntegration(t *testing.T) {
 	}
 
 	// Test 3: List servers (should show 1)
-	output = runCommand(t, h, "list")
+	output = runCommand(t, h, "servers")
 	if err := json.Unmarshal([]byte(output), &servers); err != nil {
 		t.Fatalf("parse list JSON: %v\nOutput: %s", err, output)
 	}
@@ -58,14 +58,60 @@ func TestCLIIntegration(t *testing.T) {
 		t.Errorf("expected 1 server, got %d", len(servers))
 	}
 
-	// Test 4: List tools
+	// Test 4: List tools (summary mode)
 	output = runCommand(t, h, "tools", "test")
+	var summaries []hub.ToolSummary
+	if err := json.Unmarshal([]byte(output), &summaries); err != nil {
+		t.Fatalf("parse tools JSON: %v\nOutput: %s", err, output)
+	}
+	if len(summaries) != 2 {
+		t.Errorf("expected 2 tools, got %d", len(summaries))
+	}
+	if summaries[0].Name != "hello" {
+		t.Errorf("expected first tool 'hello', got %+v", summaries)
+	}
+	if summaries[0].Server != "test" {
+		t.Errorf("expected server 'test', got %q", summaries[0].Server)
+	}
+	if summaries[0].Description != "Says hello" {
+		t.Errorf("expected description 'Says hello', got %q", summaries[0].Description)
+	}
+
+	// Test 4b: Search tools
+	output = runCommand(t, h, "tools", "test", "--search", "hello")
+	if err := json.Unmarshal([]byte(output), &summaries); err != nil {
+		t.Fatalf("parse search JSON: %v\nOutput: %s", err, output)
+	}
+	if len(summaries) != 1 || summaries[0].Name != "hello" {
+		t.Errorf("expected search to find 'hello', got %+v", summaries)
+	}
+
+	// Test 4c: Get full tool info by name
+	output = runCommand(t, h, "tools", "test", "hello")
 	var tools []hub.ToolInfo
 	if err := json.Unmarshal([]byte(output), &tools); err != nil {
-		t.Fatalf("parse tools JSON: %v\nOutput: %s", err, output)
+		t.Fatalf("parse full tools JSON: %v\nOutput: %s", err, output)
 	}
 	if len(tools) != 1 || tools[0].Name != "hello" {
 		t.Errorf("expected 1 tool 'hello', got %+v", tools)
+	}
+	if tools[0].InputSchema.Type != "object" {
+		t.Errorf("expected inputSchema.type 'object', got %q", tools[0].InputSchema.Type)
+	}
+
+	// Test 4d: Batch get full tool schema
+	output = runCommand(t, h, "tools", "test", "hello", "goodbye")
+	if err := json.Unmarshal([]byte(output), &tools); err != nil {
+		t.Fatalf("parse batch tools JSON: %v\nOutput: %s", err, output)
+	}
+	if len(tools) != 2 {
+		t.Errorf("expected 2 tools, got %d", len(tools))
+	}
+	if tools[0].Name != "hello" || tools[1].Name != "goodbye" {
+		t.Errorf("expected [hello, goodbye], got %+v", tools)
+	}
+	if tools[1].InputSchema.Type != "object" {
+		t.Errorf("expected goodbye inputSchema.type 'object', got %q", tools[1].InputSchema.Type)
 	}
 
 	// Test 5: Call tool
@@ -85,7 +131,7 @@ func TestCLIIntegration(t *testing.T) {
 	}
 
 	// Test 7: List after disconnect (should be empty)
-	output = runCommand(t, h, "list")
+	output = runCommand(t, h, "servers")
 	if err := json.Unmarshal([]byte(output), &servers); err != nil {
 		t.Fatalf("parse list JSON: %v\nOutput: %s", err, output)
 	}
@@ -163,6 +209,18 @@ func startMockMCPServer(t *testing.T) string {
 								},
 							},
 						},
+						{
+							Name:        "goodbye",
+							Description: "Says goodbye",
+							InputSchema: mcp.InputSchema{
+								Type: "object",
+								Properties: map[string]interface{}{
+									"name": map[string]interface{}{
+										"type": "string",
+									},
+								},
+							},
+						},
 					},
 				}),
 			}
@@ -170,12 +228,16 @@ func startMockMCPServer(t *testing.T) string {
 		case req.Method == "tools/call":
 			var params mcp.CallToolParams
 			json.Unmarshal(req.Params, &params)
+			text := fmt.Sprintf("Hello, %v!", params.Arguments["name"])
+			if params.Name == "goodbye" {
+				text = fmt.Sprintf("Goodbye, %v!", params.Arguments["name"])
+			}
 			resp = mcp.Response{
 				JSONRPC: "2.0",
 				ID:      req.ID,
 				Result: mustMarshalJSON(mcp.CallToolResult{
 					Content: []mcp.Content{
-						{Type: "text", Text: fmt.Sprintf("Hello, %v!", params.Arguments["name"])},
+						{Type: "text", Text: text},
 					},
 				}),
 			}

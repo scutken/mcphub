@@ -48,6 +48,9 @@ func main() {
 	rootCmd := cli.NewRootCmd(h)
 
 	if isServe {
+		// 进入 GUI 模式，隐藏控制台窗口（console 子系统构建会弹控制台）
+		hideConsole()
+
 		// Launch Wails GUI
 		app := NewApp(h)
 

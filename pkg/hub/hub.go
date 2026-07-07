@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,6 +27,13 @@ type ToolInfo struct {
 	Name        string        `json:"name"`
 	Description string        `json:"description,omitempty"`
 	InputSchema mcp.InputSchema `json:"inputSchema"`
+}
+
+// ToolSummary 是工具的摘要信息，用于渐进式披露。
+type ToolSummary struct {
+	Server      string `json:"server"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
 }
 
 // CallResult is the result of a tool call.
@@ -221,6 +229,140 @@ func (h *Hub) ListTools(serverName string) ([]ToolInfo, error) {
 	}
 
 	return allTools, nil
+}
+
+// GetTool returns the full ToolInfo (including InputSchema) for a single tool.
+// 用于渐进式披露：tools 命令只展示名称+描述，确定工具后用本方法取完整 schema。
+func (h *Hub) GetTool(serverName, toolName string) (*ToolInfo, error) {
+	tools, err := h.ListTools(serverName)
+	if err != nil {
+		return nil, err
+	}
+	for i := range tools {
+		if tools[i].Name == toolName {
+			return &tools[i], nil
+		}
+	}
+	return nil, fmt.Errorf("tool %q not found on server %q", toolName, serverName)
+}
+
+// ListToolSummaries 返回摘要列表（不含 inputSchema），用于渐进式披露。
+// serverName 为空时返回所有已连接服务器的工具摘要。
+func (h *Hub) ListToolSummaries(serverName string) ([]ToolSummary, error) {
+	if serverName != "" {
+		client, err := h.getClient(serverName)
+		if err != nil {
+			return nil, err
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		tools, err := client.ListTools(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list tool summaries from %q: %w", serverName, err)
+		}
+
+		result := make([]ToolSummary, 0, len(tools))
+		for _, t := range tools {
+			result = append(result, ToolSummary{
+				Server:      serverName,
+				Name:        t.Name,
+				Description: t.Description,
+			})
+		}
+		return result, nil
+	}
+
+	// 所有已连接服务器
+	servers, err := h.config.ListServers()
+	if err != nil {
+		return nil, err
+	}
+
+	all := make([]ToolSummary, 0)
+	for _, s := range servers {
+		client, err := h.getClient(s.Name)
+		if err != nil {
+			continue // 跳过未连接的服务器
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		tools, err := client.ListTools(ctx)
+		cancel()
+		if err != nil {
+			continue
+		}
+
+		for _, t := range tools {
+			all = append(all, ToolSummary{
+				Server:      s.Name,
+				Name:        t.Name,
+				Description: t.Description,
+			})
+		}
+	}
+
+	return all, nil
+}
+
+// SearchToolSummaries 按关键字搜索工具摘要（Name 或 Description 包含关键字，大小写不敏感）。
+// serverName 为空时搜索所有已连接服务器。
+func (h *Hub) SearchToolSummaries(serverName, keyword string) ([]ToolSummary, error) {
+	summaries, err := h.ListToolSummaries(serverName)
+	if err != nil {
+		return nil, err
+	}
+
+	keyword = strings.ToLower(keyword)
+	matched := make([]ToolSummary, 0)
+	for _, s := range summaries {
+		if strings.Contains(strings.ToLower(s.Name), keyword) ||
+			strings.Contains(strings.ToLower(s.Description), keyword) {
+			matched = append(matched, s)
+		}
+	}
+
+	return matched, nil
+}
+
+// GetTools 返回指定工具名的完整 ToolInfo（含 InputSchema）。
+// 保持 toolNames 的原始顺序。若任意工具未找到则返回错误。
+func (h *Hub) GetTools(serverName string, toolNames []string) ([]ToolInfo, error) {
+	client, err := h.getClient(serverName)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tools, err := client.ListTools(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list tools from %q: %w", serverName, err)
+	}
+
+	// 建立 name → ToolInfo 索引
+	toolMap := make(map[string]mcp.Tool, len(tools))
+	for _, t := range tools {
+		toolMap[t.Name] = t
+	}
+
+	result := make([]ToolInfo, 0, len(toolNames))
+	for _, name := range toolNames {
+		t, ok := toolMap[name]
+		if !ok {
+			return nil, fmt.Errorf("tool %q not found on server %q", name, serverName)
+		}
+		result = append(result, ToolInfo{
+			Server:      serverName,
+			Name:        t.Name,
+			Description: t.Description,
+			InputSchema: t.InputSchema,
+		})
+	}
+
+	return result, nil
 }
 
 // CallTool invokes a tool on the specified server.
