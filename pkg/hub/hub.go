@@ -23,9 +23,9 @@ type ServerInfo struct {
 
 // ToolInfo represents a tool from a server.
 type ToolInfo struct {
-	Server      string        `json:"server"`
-	Name        string        `json:"name"`
-	Description string        `json:"description,omitempty"`
+	Server      string          `json:"server"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
 	InputSchema mcp.InputSchema `json:"inputSchema"`
 }
 
@@ -38,10 +38,10 @@ type ToolSummary struct {
 
 // CallResult is the result of a tool call.
 type CallResult struct {
-	Server  string           `json:"server"`
-	Tool    string           `json:"tool"`
-	IsError bool             `json:"isError"`
-	Content []mcp.Content    `json:"content"`
+	Server  string        `json:"server"`
+	Tool    string        `json:"tool"`
+	IsError bool          `json:"isError"`
+	Content []mcp.Content `json:"content"`
 }
 
 // Hub is the unified service layer for managing MCP connections.
@@ -82,10 +82,7 @@ func (h *Hub) Connect(name, url string, headers map[string]string, transport str
 
 	// Connect
 	transportType := mcp.TransportAuto
-	switch transport {
-	case "sse":
-		transportType = mcp.TransportSSE
-	case "streamable":
+	if transport == "streamable" {
 		transportType = mcp.TransportStreamable
 	}
 
@@ -397,10 +394,7 @@ func (h *Hub) ReconnectAll() error {
 
 	for _, s := range servers {
 		transportType := mcp.TransportAuto
-		switch s.Transport {
-		case "sse":
-			transportType = mcp.TransportSSE
-		case "streamable":
+		if s.Transport == "streamable" {
 			transportType = mcp.TransportStreamable
 		}
 

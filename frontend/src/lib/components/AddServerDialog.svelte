@@ -24,7 +24,6 @@
 
   const transportOptions = [
     { value: 'auto', label: 'Auto (自动检测)' },
-    { value: 'sse', label: 'SSE (Server-Sent Events)' },
     { value: 'streamable', label: 'Streamable HTTP' },
   ];
 
@@ -172,7 +171,7 @@
             type="text"
             bind:value={url}
             class="field-input"
-            placeholder="http://localhost:8080/sse"
+            placeholder="http://localhost:8080/mcp"
             disabled={loading}
           />
         </div>

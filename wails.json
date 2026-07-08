@@ -13,7 +13,7 @@
   "info": {
     "companyName": "mcphub",
     "productName": "MCPHub",
-    "productVersion": "0.0.1",
+    "productVersion": "0.1.0",
     "copyright": "MIT",
     "comments": "MCP Server Manager & CLI"
   }

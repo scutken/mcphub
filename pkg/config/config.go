@@ -23,7 +23,7 @@ type Server struct {
 	Name      string            `json:"name"`
 	URL       string            `json:"url"`
 	Headers   map[string]string `json:"headers,omitempty"`
-	Transport string            `json:"transport"` // "auto", "sse", "streamable"
+	Transport string            `json:"transport"` // "auto" or "streamable"
 	AddedAt   time.Time         `json:"added_at"`
 }
 

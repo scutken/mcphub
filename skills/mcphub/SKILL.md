@@ -27,7 +27,7 @@ mcphub call <server> <tool> --args '{"key":"value"}'
 servers                                   # 服务器列表 +连接状态
 servers --json=false                      # 可读文本
 connect <名称> <URL>                     # 连接服务器
-connect <名称> <URL> -H "K: V" -t sse    # 带 header + 指定传输
+connect <名称> <URL> -H "K: V" -t streamable    # 带 header + 指定传输
 disconnect <名称>                         # 断开并移除
 tools                                     # 所有服务器工具摘要
 tools <服务器名>                          # 指定服务器工具摘要
@@ -38,7 +38,7 @@ call <服务器> <工具名>                     # 无参调用
 call <服务器> <工具名> --json=false        # 文本模式输出
 ```
 
-默认 JSON 输出。`-H` 可多次指定。`-t` 可选 `auto`(默认)/`streamable`/`sse`。
+默认 JSON 输出。`-H` 可多次指定。`-t` 可选 `auto`(默认)/`streamable`。
 
 ## 工作流
 

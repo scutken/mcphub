@@ -22,7 +22,7 @@ func NewRootCmd(hubInstance *hub.Hub) *cobra.Command {
 		Long: `MCPHub 是一个管理 HTTP MCP 服务器连接的 CLI 工具。
 
 功能：
-  - 连接 MCP 服务器（HTTP SSE / Streamable）
+  - 连接 MCP 服务器（Streamable HTTP）
   - 列出已连接服务器的工具
   - 调用工具并传参
 
@@ -72,12 +72,7 @@ func newConnectCmd() *cobra.Command {
 		Short: "连接一个 MCP 服务器",
 		Long: `通过 HTTP 连接 MCP 服务器并保存连接信息。
 
-连接建立后立即进行握手。传输协议自动检测（优先 Streamable HTTP，其次 SSE）。
-
-示例：
-  mcphub connect my-server https://mcp.example.com
-  mcphub connect github https://api.github.com/mcp --header "Authorization: Bearer ***"
-  mcphub connect server3 https://example.com --transport sse`,
+连接建立后立即进行握手。默认使用 Streamable HTTP 传输。`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
@@ -113,7 +108,7 @@ func newConnectCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringArrayVarP(&headers, "header", "H", nil, "HTTP 请求头 (Key: Value)，可多次指定")
-	cmd.Flags().StringVarP(&transport, "transport", "t", "auto", "传输协议: auto, sse, streamable")
+	cmd.Flags().StringVarP(&transport, "transport", "t", "auto", "传输协议: auto, streamable")
 
 	return cmd
 }

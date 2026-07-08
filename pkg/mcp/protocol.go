@@ -1,5 +1,5 @@
 // Package mcp implements a lightweight MCP (Model Context Protocol) HTTP client.
-// Supports both SSE (2024-11-05) and Streamable HTTP (2025-11-25) transports.
+// Supports the Streamable HTTP (2025-11-25) transport.
 package mcp
 
 import "encoding/json"
